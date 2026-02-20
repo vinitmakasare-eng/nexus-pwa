@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, defineAsyncComponent, watch } from 'vue'
+import { ref, computed, onMounted, defineAsyncComponent, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useClientStore } from '../stores/client'
 import { useFlowStore } from '../stores/flow'
@@ -28,6 +28,10 @@ const currentScreen = computed(() => {
   return stepId ? (screenMap[stepId] || null) : null
 })
 
+// PWA Install Logic
+const deferredPrompt = ref<any>(null)
+const showInstallButton = ref(false)
+
 // Initialize client and step from URL
 const syncUrlToState = () => {
   const clientId = route.query.client as string || null
@@ -54,7 +58,36 @@ const syncStateToUrl = (newIndex: number) => {
 
 onMounted(() => {
   syncUrlToState()
+  
+  window.addEventListener('beforeinstallprompt', (e) => {
+    // Prevent the mini-infobar from appearing on mobile
+    e.preventDefault()
+    // Stash the event so it can be triggered later.
+    deferredPrompt.value = e
+    // Update UI notify the user they can install the PWA
+    showInstallButton.value = true
+  })
+
+  window.addEventListener('appinstalled', () => {
+    // Hide the install button
+    showInstallButton.value = false
+    deferredPrompt.value = null
+  })
 })
+
+const handleInstall = async () => {
+  if (!deferredPrompt.value) return
+  
+  // Show the install prompt
+  deferredPrompt.value.prompt()
+  
+  // Wait for the user to respond to the prompt
+  const { outcome } = await deferredPrompt.value.userChoice
+  if (outcome === 'accepted') {
+    showInstallButton.value = false
+  }
+  deferredPrompt.value = null
+}
 
 // Watch for internal store changes (e.g. user clicks "Next")
 watch(() => flowStore.currentStepIndex, (newIndex) => {
@@ -79,6 +112,20 @@ watch(() => route.query.client, (newClient) => {
 
 <template>
   <div class="flow-container container">
+    <!-- PWA Install Banner (Only on first step) -->
+    <div v-if="showInstallButton && flowStore.currentStepIndex === 0" class="install-banner fade-in-up">
+      <div class="banner-content">
+        <div class="icon-wrapper">
+          <span class="icon">✨</span>
+        </div>
+        <div class="banner-text">
+          <h3>Install Nexus PWA</h3>
+          <p>Add to home screen for the full app experience</p>
+        </div>
+      </div>
+      <button class="install-btn" @click="handleInstall">Install</button>
+    </div>
+
     <!-- Stepper Bar -->
     <div v-if="!clientStore.loading" class="stepper-section fade-in-up">
       <div class="stepper-track">
@@ -122,13 +169,71 @@ watch(() => route.query.client, (newClient) => {
 </template>
 
 <style scoped>
-/* Styles remain the same */
 .flow-container {
   min-height: 80vh;
   display: flex;
   flex-direction: column;
-  gap: var(--space-2xl);
+  gap: var(--space-xl);
   padding-bottom: var(--space-4xl);
+}
+
+.install-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem var(--space-xl);
+  background: var(--glass-bg);
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-lg);
+  margin-bottom: var(--space-md);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+}
+
+.banner-content {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+}
+
+.icon-wrapper {
+  width: 40px;
+  height: 40px;
+  background: var(--gradient-accent);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+}
+
+.banner-text h3 {
+  font-size: 0.95rem;
+  font-weight: 700;
+  margin: 0;
+}
+
+.banner-text p {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  margin: 2px 0 0 0;
+}
+
+.install-btn {
+  background: var(--accent-start);
+  color: white;
+  border: none;
+  padding: 0.5rem 1.2rem;
+  border-radius: var(--radius-full);
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all var(--transition-normal);
+}
+
+.install-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px var(--glow-purple);
 }
 
 .stepper-section {

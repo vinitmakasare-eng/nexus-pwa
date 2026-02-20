@@ -7,6 +7,7 @@ const props = defineProps<{
 
 const stencilType = computed(() => {
   const p = props.position.toLowerCase()
+  // Mirroring logic: we use the same silhouette for opposite corners but flip it
   if (p.includes('front') && p.includes('left')) return 'corner'
   if (p.includes('front') && p.includes('right')) return 'corner'
   if (p.includes('rear') && p.includes('left')) return 'corner'
@@ -20,7 +21,13 @@ const stencilType = computed(() => {
 
 const isRightSide = computed(() => {
   const p = props.position.toLowerCase()
+  // Flip for right-side/rear-right positions
   return p.includes('right')
+})
+
+const isRearCorner = computed(() => {
+  const p = props.position.toLowerCase()
+  return p.includes('rear') && (p.includes('left') || p.includes('right'))
 })
 </script>
 
@@ -35,61 +42,58 @@ const isRightSide = computed(() => {
     <div class="corner-bracket bl"></div>
     <div class="corner-bracket br"></div>
 
-    <svg viewBox="0 0 400 300" class="stencil-svg" :class="{ 'flip-x': isRightSide }">
+    <svg viewBox="0 0 400 300" class="stencil-svg" :class="{ 'flip-x': isRightSide, 'flip-y': isRearCorner && stencilType === 'corner' }">
       <defs>
         <filter id="stencil-glow">
-          <feGaussianBlur stdDeviation="3" result="blur" />
+          <feGaussianBlur stdDeviation="2.5" result="blur" />
           <feComposite in="SourceGraphic" in2="blur" operator="over" />
         </filter>
+        <linearGradient id="stencil-grad" x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" style="stop-color:var(--accent-start);stop-opacity:0.2" />
+          <stop offset="100%" style="stop-color:var(--accent-start);stop-opacity:0.05" />
+        </linearGradient>
       </defs>
 
       <g class="stencil-art" filter="url(#stencil-glow)">
-        <!-- Realistic Side Profile (Sedan/SUV Mix) -->
+        <!-- EXACT SIDE VIEW SILHOUETTE (SUV style from user image) -->
         <template v-if="stencilType === 'side'">
-          <path d="M40,205 C40,195 50,185 65,175 C80,165 110,150 140,135 C170,120 230,120 270,125 C310,130 340,145 355,170 C370,195 365,210 365,215 L35,215 L40,205 Z" class="silhouette-fill" />
-          <path d="M40,205 C40,195 50,185 65,175 C80,165 110,150 140,135 C170,120 230,120 270,125 C310,130 340,145 355,170 C370,195 365,210 365,215 L35,215 L40,205 Z" class="silhouette-outline" />
-          <!-- Wheels -->
-          <circle cx="95" cy="215" r="28" class="silhouette-outline" />
-          <circle cx="305" cy="215" r="28" class="silhouette-outline" />
+          <path d="M40,210 L360,210 L355,185 C350,165 340,145 310,135 C280,125 240,120 200,122 C160,120 120,125 90,135 C60,145 50,165 45,185 L40,210 Z" class="silhouette-fill" />
+          <path d="M40,210 L360,210 L355,185 C350,165 340,145 310,135 C280,125 240,120 200,122 C160,120 120,125 90,135 C60,145 50,165 45,185 L40,210 Z" class="silhouette-outline" />
+          <circle cx="95" cy="210" r="28" class="silhouette-outline" />
+          <circle cx="305" cy="210" r="28" class="silhouette-outline" />
         </template>
 
-        <!-- Realistic Front View -->
+        <!-- EXACT FRONT VIEW (Derived from SUV style) -->
         <template v-if="stencilType === 'front'">
-          <path d="M100,220 L100,170 C100,140 130,130 200,130 C270,130 300,140 300,170 L300,220 L280,220 C280,210 260,205 200,205 C140,205 120,210 120,220 Z" class="silhouette-fill" />
-          <path d="M100,220 L100,170 C100,140 130,130 200,130 C270,130 300,140 300,170 L300,220 L280,220 C280,210 260,205 200,205 C140,205 120,210 120,220 Z" class="silhouette-outline" />
-          <!-- Windshield Inner -->
-          <path d="M125,165 L275,165 L260,145 L140,145 Z" class="silhouette-detail" />
-          <!-- Headlights -->
-          <rect x="110" y="180" width="35" height="15" rx="4" class="silhouette-detail" />
-          <rect x="255" y="180" width="35" height="15" rx="4" class="silhouette-detail" />
+          <path d="M100,220 L100,175 C100,155 115,135 200,132 C285,135 300,155 300,175 L300,220 C300,220 260,210 200,210 C140,210 100,220 100,220 Z" class="silhouette-fill" />
+          <path d="M100,220 L100,175 C100,155 115,135 200,132 C285,135 300,155 300,175 L300,220 C300,220 260,210 200,210 C140,210 100,220 100,220 Z" class="silhouette-outline" />
+          <path d="M130,165 L270,165 L255,145 L145,145 Z" class="silhouette-detail" />
+          <rect x="110" y="185" width="40" height="15" rx="4" class="silhouette-detail" />
+          <rect x="250" y="185" width="40" height="15" rx="4" class="silhouette-detail" />
         </template>
 
-        <!-- Realistic Rear View -->
+        <!-- EXACT REAR VIEW (From user image) -->
         <template v-if="stencilType === 'rear'">
-          <path d="M100,220 L100,170 C100,140 130,130 200,130 C270,130 300,140 300,170 L300,220 L280,220 C280,210 260,205 200,205 C140,205 120,210 120,220 Z" class="silhouette-fill" />
-          <path d="M100,220 L100,170 C100,140 130,130 200,130 C270,130 300,140 300,170 L300,220 L280,220 C280,210 260,205 200,205 C140,205 120,210 120,220 Z" class="silhouette-outline" />
-          <!-- Rear Window -->
-          <path d="M130,140 L270,140 L260,165 L140,165 Z" class="silhouette-detail" />
-          <!-- Taillights -->
-          <rect x="110" y="175" width="40" height="12" rx="2" class="silhouette-detail" />
-          <rect x="250" y="175" width="40" height="12" rx="2" class="silhouette-detail" />
+          <path d="M100,220 L100,175 C100,155 115,135 200,132 C285,135 300,155 300,175 L300,220 C300,220 260,210 200,210 C140,210 100,220 100,220 Z" class="silhouette-fill" />
+          <path d="M100,220 L100,175 C100,155 115,135 200,132 C285,135 300,155 300,175 L300,220 C300,220 260,210 200,210 C140,210 100,220 100,220 Z" class="silhouette-outline" />
+          <path d="M125,145 L275,145 L260,170 L140,170 Z" class="silhouette-detail" />
+          <rect x="110" y="180" width="45" height="12" rx="2" class="silhouette-detail" />
+          <rect x="245" y="180" width="45" height="12" rx="2" class="silhouette-detail" />
         </template>
 
-        <!-- Realistic Perspective/Corner View (High Fidelity) -->
+        <!-- EXACT CORNER/3-4 VIEW (From user image) -->
         <template v-if="stencilType === 'corner'">
-          <path d="M60,190 C60,170 80,155 110,145 C150,130 220,130 260,145 C300,160 330,180 340,210 C340,220 320,230 200,230 C80,230 60,215 60,190 Z" class="silhouette-fill" />
-          <path d="M60,190 C60,170 80,155 110,145 C150,130 220,130 260,145 C300,160 330,180 340,210 C340,220 320,230 200,230 C80,230 60,215 60,190 Z" class="silhouette-outline" />
-          <!-- Cabin/Windows -->
-          <path d="M130,150 L250,155 L220,185 L140,180 Z" class="silhouette-detail" />
-          <!-- Wheels Perspective -->
-          <circle cx="110" cy="225" r="22" class="silhouette-outline" />
-          <circle cx="280" cy="215" r="18" class="silhouette-outline" />
+          <path d="M60,195 C60,185 70,175 90,165 C120,145 150,135 200,130 C250,125 310,145 340,175 C350,195 350,215 350,225 L65,225 C65,220 60,205 60,195 Z" class="silhouette-fill" />
+          <path d="M60,195 C60,185 70,175 90,165 C120,145 150,135 200,130 C250,125 310,145 340,175 C350,195 350,215 350,225 L65,225 C65,220 60,205 60,195 Z" class="silhouette-outline" />
+          <path d="M140,145 L260,150 L230,180 L145,180 Z" class="silhouette-detail" />
+          <circle cx="115" cy="225" r="22" class="silhouette-outline" />
+          <circle cx="290" cy="215" r="18" class="silhouette-outline" />
         </template>
       </g>
     </svg>
 
     <div class="hud-helper">
-      <span class="helper-text">ALIGN {{ position }}</span>
+      <span class="helper-text">{{ position }}</span>
     </div>
   </div>
 </template>
@@ -107,9 +111,9 @@ const isRightSide = computed(() => {
 }
 
 .stencil-svg {
-  width: 90%;
-  height: 90%;
-  max-width: 900px;
+  width: 85%;
+  height: 85%;
+  max-width: 850px;
 }
 
 .flip-x {
@@ -117,25 +121,28 @@ const isRightSide = computed(() => {
 }
 
 .silhouette-fill {
-  fill: rgba(255, 255, 255, 0.05);
+  fill: url(#stencil-grad);
 }
 
 .silhouette-outline {
   fill: none;
   stroke: var(--accent-start);
-  stroke-width: 3;
+  stroke-width: 3.5;
   stroke-linecap: round;
   stroke-linejoin: round;
   stroke-dasharray: 2000;
   stroke-dashoffset: 2000;
-  animation: draw-stencil 2s ease-out forwards;
+  animation: draw-stencil 2.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
 }
 
 .silhouette-detail {
   fill: none;
   stroke: var(--accent-start);
   stroke-width: 1.5;
-  opacity: 0.4;
+  opacity: 0.35;
+  stroke-dasharray: 500;
+  stroke-dashoffset: 500;
+  animation: draw-stencil 2s cubic-bezier(0.4, 0, 0.2, 1) 0.5s forwards;
 }
 
 @keyframes draw-stencil {
@@ -145,10 +152,10 @@ const isRightSide = computed(() => {
 /* UI Elements */
 .corner-bracket {
   position: absolute;
-  width: 40px;
-  height: 40px;
+  width: 35px;
+  height: 35px;
   border: 3px solid var(--accent-start);
-  opacity: 0.6;
+  opacity: 0.4;
 }
 
 .tl { top: 30px; left: 30px; border-right: none; border-bottom: none; }
@@ -160,11 +167,11 @@ const isRightSide = computed(() => {
   position: absolute;
   left: 0;
   right: 0;
-  height: 3px;
+  height: 2px;
   background: linear-gradient(90deg, transparent, var(--accent-start), transparent);
-  box-shadow: 0 0 20px var(--accent-start);
-  animation: scan-vertical 5s linear infinite;
-  opacity: 0.2;
+  box-shadow: 0 0 15px var(--accent-start);
+  animation: scan-vertical 4s linear infinite;
+  opacity: 0.15;
 }
 
 @keyframes scan-vertical {
@@ -175,20 +182,22 @@ const isRightSide = computed(() => {
 
 .hud-helper {
   position: absolute;
-  bottom: 120px;
-  background: rgba(0, 0, 0, 0.5);
-  padding: 6px 16px;
+  bottom: 20%;
+  background: rgba(0, 0, 0, 0.7);
+  padding: 8px 24px;
   border-radius: var(--radius-full);
-  border: 1px solid var(--accent-start);
-  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(12px);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.5);
 }
 
 .helper-text {
   font-family: 'Inter', system-ui, sans-serif;
-  font-size: 0.8rem;
-  font-weight: 700;
-  letter-spacing: 0.1em;
-  color: var(--accent-start);
+  font-size: 0.85rem;
+  font-weight: 800;
+  letter-spacing: 0.2em;
+  color: #fff;
   text-transform: uppercase;
+  text-shadow: 0 0 10px var(--accent-start);
 }
 </style>
