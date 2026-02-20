@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1a1a3e"/>
+      <stop offset="100%" style="stop-color:#0f0f23"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#8b5cf6"/>
+      <stop offset="100%" style="stop-color:#06b6d4"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="80" fill="url(#bg)"/>
+  <!-- Rocket body -->
+  <g transform="translate(256,256)">
+    <!-- Glow -->
+    <ellipse cx="0" cy="25" rx="58" ry="80" fill="#8b5cf6" opacity="0.15"/>
+    <!-- Rocket -->
+    <path d="M0-130 C-10-130 -38-80 -38 14 L-38 54 L-60 86 L-28 76 L-28 94 C-28 107 28 107 28 94 L28 76 L60 86 L38 54 L38 14 C38-80 10-130 0-130Z" fill="white"/>
+    <!-- Window -->
+    <circle cx="0" cy="-26" r="22" fill="url(#accent)"/>
+    <!-- Flames -->
+    <path d="M-16 94 Q0 148 16 94" fill="#f59e0b" opacity="0.9"/>
+    <path d="M-8 94 Q0 128 8 94" fill="#ef4444" opacity="0.8"/>
+  </g>
+</svg>
