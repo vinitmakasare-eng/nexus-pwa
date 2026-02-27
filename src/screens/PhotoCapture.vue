@@ -13,6 +13,10 @@ const videoElement = ref<HTMLVideoElement | null>(null)
 const stream = ref<MediaStream | null>(null)
 const canvasElement = ref<HTMLCanvasElement | null>(null)
 
+  const isIOS = computed(() => {
+  return /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
+})
 const startCamera = async (position: string) => {
   currentPosition.value = position
   showCamera.value = true
@@ -115,7 +119,7 @@ onUnmounted(() => {
           ref="videoElement" 
           autoplay 
           playsinline 
-          class="camera-preview"
+          :class="['camera-preview', { 'is-ios': isIOS }]"
         ></video>
         <canvas ref="canvasElement" style="display: none;"></canvas>
 
@@ -251,12 +255,18 @@ onUnmounted(() => {
   flex-direction: column;
 }
 
+    /* Default for Android */
 .camera-preview {
   width: 100%;
   height: 100%;
   object-fit: cover;
 }
 
+/* Specific fix for iOS */
+.camera-preview.is-ios {
+  object-fit: cover;
+  background-color: #000;
+}
 .camera-overlay {
   position: absolute;
   inset: 0;
@@ -336,6 +346,21 @@ onUnmounted(() => {
   padding-bottom: calc(var(--space-2xl) + env(safe-area-inset-bottom));
   z-index: 10;
   pointer-events: auto;
+}
+
+@media (orientation: landscape) {
+  .camera-footer {
+  position: absolute;
+  right: var(--space-xl);
+  top: 50%;
+  transform: translateY(-50%);
+  padding-bottom: 0;
+  z-index: 10;
+  pointer-events: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
 }
 
 .capture-btn {
