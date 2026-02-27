@@ -266,7 +266,7 @@ onUnmounted(() => {
 
 /* Specific fix for iOS */
 .camera-preview.is-ios {
-  object-fit: cover;
+  object-fit: contain;
   background-color: #000;
 }
 .camera-overlay {
@@ -297,6 +297,11 @@ onUnmounted(() => {
   color: white;
   z-index: 10;
   pointer-events: auto;
+}
+@media (orientation: landscape) {
+  .camera-header {/* Horizontal Padding only (X-axis) */
+    padding-left: calc(env(safe-area-inset-left) + 65px);
+    padding-right: calc(env(safe-area-inset-right) + 65px);}
 }
 
 .position-badge {
@@ -363,6 +368,15 @@ onUnmounted(() => {
   flex-direction: column;
   align-items: center;
 }
+}
+
+@media (orientation: landscape) {
+  /* Targets devices with a notch/safe area (mainly iPhone) */
+  @supports (right: env(safe-area-inset-right)) {
+    .camera-footer {
+      right: var(--space-4xl);
+    }
+  }
 }
 
 .capture-btn {
