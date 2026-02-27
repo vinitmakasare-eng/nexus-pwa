@@ -299,6 +299,7 @@ onUnmounted(() => {
   pointer-events: auto;
 }
 
+
 .position-badge {
   display: flex;
   align-items: center;
