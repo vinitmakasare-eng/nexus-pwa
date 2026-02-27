@@ -18,10 +18,24 @@ export const PHOTO_POSITIONS = [
 
 const STORAGE_KEY = 'blaze_captured_photos';
 
+const blobToBase64 = (blob: Blob): Promise<string> => {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+    });
+};
 export const usePhotoStore = defineStore('photo', {
     state: () => {
         const stored = localStorage.getItem(STORAGE_KEY);
-        const initialPhotos = stored ? JSON.parse(stored) : {};
+        let initialPhotos = {};
+        try {
+            initialPhotos = stored ? JSON.parse(stored) : {};
+        } catch (e) {
+            console.error("Failed to parse photos", e);
+        }
+
         return {
             photos: initialPhotos as Record<string, CapturedPhoto>,
         }
@@ -35,14 +49,21 @@ export const usePhotoStore = defineStore('photo', {
     },
 
     actions: {
-        setPhoto(position: string, photo: CapturedPhoto) {
-            // Note: Files cannot be stringified to localStorage easily.
-            // In a real PWA we might use IndexedDB for the files.
-            // For now, we persist the metadata/preview strings.
-            if (this.photos[position]) {
+        async setPhoto(position: string, photo: CapturedPhoto) {
+            if (this.photos[position]?.preview.startsWith('blob:')) {
                 URL.revokeObjectURL(this.photos[position].preview);
             }
-            this.photos[position] = photo;
+
+            // If a File exists, generate a Base64 version for persistence
+            let persistentPreview = photo.preview;
+            if (photo.file) {
+                persistentPreview = await blobToBase64(photo.file);
+            }
+
+            this.photos[position] = {
+                ...photo,
+                preview: persistentPreview // Store the Base64 version
+            };
             this.persist();
         },
         removePhoto(position: string) {
@@ -58,17 +79,13 @@ export const usePhotoStore = defineStore('photo', {
             this.persist();
         },
         persist() {
-            // We only persist the preview URLs which are blobs in this session
-            // Ideally we'd store base64 or use IDB for actual persistence across sessions
-            // For this PWA demo, we'll store the keys to know what's captured
-            const persistenceObj = { ...this.photos };
-            // Clear File objects as they aren't serializable
-            Object.keys(persistenceObj).forEach(key => {
-                if (persistenceObj[key]) {
-                    delete (persistenceObj[key] as any).file;
-                }
+            // Now it's safe to stringify because preview is a Base64 string, not a Blob URL
+            const dataToSave = JSON.parse(JSON.stringify(this.photos));
+            // Ensure we don't try to stringify the File object
+            Object.keys(dataToSave).forEach(key => {
+                delete dataToSave[key].file;
             });
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(persistenceObj));
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(dataToSave));
         }
     }
 })
