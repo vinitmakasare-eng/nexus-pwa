@@ -54,14 +54,16 @@ const capture = () => {
   
   ctx.drawImage(video, 0, 0)
   
-  canvas.toBlob((blob) => {
+  canvas.toBlob(async (blob) => {
     if (blob) {
       const file = new File([blob], `${currentPosition.value.replace(' ', '_')}.jpg`, { type: 'image/jpeg' })
-      const preview = URL.createObjectURL(blob)
-      photoStore.setPhoto(currentPosition.value, { file, preview })
+      await photoStore.setPhoto(currentPosition.value, {
+        file,
+        preview: URL.createObjectURL(blob)
+      })
       closeCamera()
     }
-  }, 'image/jpeg', 0.9)
+  }, 'image/jpeg', 0.8)
 }
 
 const closeCamera = () => {

@@ -11,6 +11,12 @@ const flowStore = useFlowStore()
 const isStandalone = ref(false)
 
 onMounted(() => {
+  const hasSessionStarted = sessionStorage.getItem('blaze_session_active');
+
+  if (!hasSessionStarted) {
+    localStorage.removeItem('blaze_captured_photos');
+    sessionStorage.setItem('blaze_session_active', 'true');
+  }
   // Detect if the app is running in standalone mode (installed PWA)
   isStandalone.value = window.matchMedia('(display-mode: standalone)').matches || 
                      (window.navigator as any).standalone === true;
