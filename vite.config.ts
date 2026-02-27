@@ -7,6 +7,9 @@ import { VueRouterAutoImports } from 'unplugin-vue-router'
 
 // https://vite.dev/config/
 export default defineConfig({
+  server: {
+    allowedHosts : true
+  },
   plugins: [
     // ⚠️ VueRouter must be placed BEFORE vue()
     VueRouter({
@@ -33,7 +36,7 @@ export default defineConfig({
         background_color: '#0f0f23',
         display: 'standalone',
         scope: '/',
-        start_url: '/',
+        start_url: '/?mode=pwa',
         icons: [
           {
             src: 'pwa-192x192.svg',

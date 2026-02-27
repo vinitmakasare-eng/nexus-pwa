@@ -1,0 +1,34 @@
+
+export const checkIsIOS = (): boolean => {
+    if (typeof window === 'undefined') return false; // Safety for SSR
+
+    const userAgent = window.navigator.userAgent || window.navigator.vendor;
+
+    // Standard iPhone/iPad check
+    const isAppleMobile = /iPad|iPhone|iPod/.test(userAgent) && !(window as any).MSStream;
+
+    // Detection for modern iPads that claim to be "Macintosh"
+    const isIPadOS = (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+
+    return isAppleMobile || isIPadOS;
+};
+
+// Check if the app is already installed/running in standalone mode
+export const isStandalone = (): boolean => {
+    const nav = window.navigator as NavigatorStandalone
+
+    return (
+        window.matchMedia('(display-mode: standalone)').matches ||
+        nav.standalone === true
+    )
+}
+export const isPwaLaunch = (): boolean => {
+    if (typeof window === 'undefined') return false;
+    const urlParams = new URLSearchParams(window.location.search);
+    return urlParams.get('mode') === 'pwa';
+};
+
+interface NavigatorStandalone extends Navigator {
+    standalone?: boolean
+}
+

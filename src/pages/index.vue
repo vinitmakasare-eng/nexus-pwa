@@ -3,6 +3,7 @@ import { ref, computed, onMounted, defineAsyncComponent, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useClientStore } from '../stores/client'
 import { useFlowStore } from '../stores/flow'
+import { checkIsIOS, isStandalone , isPwaLaunch } from '../utils/device'
 
 // Async screens for code splitting
 const VinCapture = defineAsyncComponent(() => import('../screens/VinCapture.vue'))
@@ -15,6 +16,8 @@ const flowStore = useFlowStore()
 const route = useRoute()
 const router = useRouter()
 
+const isIOS = ref(false)
+const isInstalled = ref(false)
 // Map step IDs to components
 const screenMap: Record<string, any> = {
   'vin-capture': VinCapture,
@@ -56,9 +59,22 @@ const syncStateToUrl = (newIndex: number) => {
   })
 }
 
+// Inside onMounted in your main flow file
+const checkStandalone = () => {
+  const isPwa = isPwaLaunch() || isStandalone();
+  isInstalled.value = isStandalone() || isPwa;
+  isIOS.value = checkIsIOS();
+
+  if (isInstalled.value) {
+    showInstallButton.value = false;
+  }
+}
+
 onMounted(() => {
   syncUrlToState()
-  
+
+  checkStandalone()
+
   window.addEventListener('beforeinstallprompt', (e) => {
     // Prevent the mini-infobar from appearing on mobile
     e.preventDefault()
@@ -124,6 +140,27 @@ watch(() => route.query.client, (newClient) => {
         </div>
       </div>
       <button class="install-btn" @click="handleInstall">Install</button>
+    </div>
+   <div v-if="isIOS && !isInstalled && !showInstallButton && flowStore.currentStepIndex === 0"
+      class="install-banner ios-banner fade-in-up">
+      <div class="banner-content">
+        <div class="icon-wrapper ios-icon">
+          <span class="icon">📲</span>
+        </div>
+        <div class="banner-text">
+          <h3>Install Nexus PWA</h3>
+          <p>
+            Tap the <strong>share</strong> icon
+            <span class="ios-share-svg">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path
+                  d="M12 15V3m0 0l-4 4m4-4l4 4M9 11H6a2 2 0 00-2 2v7a2 2 0 002 2h12a2 2 0 002-2v-7a2 2 0 00-2-2h-3" />
+              </svg>
+            </span>
+            below and select <strong>'Add to Home Screen'</strong>.
+          </p>
+        </div>
+      </div>
     </div>
 
     <!-- Stepper Bar -->
@@ -338,7 +375,31 @@ watch(() => route.query.client, (newClient) => {
   opacity: 0;
   transform: translateX(-30px);
 }
+/* iOS Specific Banner Styling */
+.ios-banner {
+  background: rgba(255, 255, 255, 0.05);
+}
 
+.ios-icon {
+  background: linear-gradient(135deg, #007AFF, #5AC8FA);
+}
+
+.ios-share-svg {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.1);
+  padding: 2px;
+  border-radius: 4px;
+  margin: 0 2px;
+  vertical-align: middle;
+  color: #007AFF;
+}
+
+.banner-text strong {
+  color: #fff;
+  font-weight: 700;
+}
 .loading-state {
   display: flex;
   flex-direction: column;
