@@ -157,7 +157,7 @@ watch(() => route.query.client, (newClient) => {
                   d="M12 15V3m0 0l-4 4m4-4l4 4M9 11H6a2 2 0 00-2 2v7a2 2 0 002 2h12a2 2 0 002-2v-7a2 2 0 00-2-2h-3" />
               </svg>
             </span>
-            below and select <strong>'Add to Home Screen'</strong>.
+           <strong> URL</strong> bar, scroll down and select <strong>'Add to Home Screen'</strong>.
           </p>
         </div>
       </div>
