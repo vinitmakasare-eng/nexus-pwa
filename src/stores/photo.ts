@@ -80,12 +80,16 @@ export const usePhotoStore = defineStore('photo', {
         },
         persist() {
             // Now it's safe to stringify because preview is a Base64 string, not a Blob URL
-            const dataToSave = JSON.parse(JSON.stringify(this.photos));
-            // Ensure we don't try to stringify the File object
-            Object.keys(dataToSave).forEach(key => {
-                delete dataToSave[key].file;
-            });
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(dataToSave));
+    
+            try {
+                const dataToSave = JSON.parse(JSON.stringify(this.photos));
+                Object.keys(dataToSave).forEach(key => {
+                    delete dataToSave[key].file;
+                });
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(dataToSave));
+            } catch (e) {
+                // console.error("LOCAL STORAGE IS FULL!", e);
+            }
         }
     }
 })
