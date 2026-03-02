@@ -74,7 +74,11 @@ onMounted(() => {
   syncUrlToState()
 
   checkStandalone()
-
+  if (isIOS.value && !isInstalled.value) {
+    setTimeout(() => {
+      isIOS.value = false;
+    }, 15000);
+  } 
   window.addEventListener('beforeinstallprompt', (e) => {
     // Prevent the mini-infobar from appearing on mobile
     e.preventDefault()

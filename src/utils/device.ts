@@ -15,20 +15,21 @@ export const checkIsIOS = (): boolean => {
 
 // Check if the app is already installed/running in standalone mode
 export const isStandalone = (): boolean => {
-    const nav = window.navigator as NavigatorStandalone
+    if (typeof window === 'undefined') return false;
 
-    return (
-        window.matchMedia('(display-mode: standalone)').matches ||
-        nav.standalone === true
-    )
-}
+    const urlParams = new URLSearchParams(window.location.search);
+    const isPwaQuery = urlParams.get('mode') === 'pwa';
+
+    const isStandaloneMode = window.matchMedia('(display-mode: standalone)').matches;
+    const isSafariStandalone = (window.navigator as any).standalone === true;
+
+    return isStandaloneMode || isSafariStandalone || isPwaQuery;
+};
+
 export const isPwaLaunch = (): boolean => {
     if (typeof window === 'undefined') return false;
     const urlParams = new URLSearchParams(window.location.search);
-    return urlParams.get('mode') === 'pwa';
+    return urlParams.get('mode') === 'pwa' || window.location.search.includes('mode=pwa');
 };
 
-interface NavigatorStandalone extends Navigator {
-    standalone?: boolean
-}
 

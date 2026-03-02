@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onUnmounted } from 'vue'
+import { ref, onUnmounted, nextTick, } from 'vue'
 import { usePhotoStore, PHOTO_POSITIONS } from '../stores/photo'
 import { useFlowStore } from '../stores/flow'
 import CameraStencil from '../components/CameraStencil.vue'
@@ -19,36 +19,44 @@ const canvasElement = ref<HTMLCanvasElement | null>(null)
 })
 const startCamera = async (position: string) => {
   currentPosition.value = position
-  showCamera.value = true
-  
+  showCamera.value = true 
+
+  // WAIT for the video element to appear in the DOM
+  await nextTick()
+
   try {
     stream.value = await navigator.mediaDevices.getUserMedia({
       video: {
         facingMode: 'environment',
         width: { ideal: 1920 },
         height: { ideal: 1080 }
-      }
+      },
+      audio: false // Explicitly disable audio
     })
-    
+
     if (videoElement.value) {
       videoElement.value.srcObject = stream.value
+      // iOS sometimes needs an explicit play() call
+      await videoElement.value.play()
     }
   } catch (err) {
     console.error('Error accessing camera:', err)
-    alert('Could not access camera. Please ensure you have granted permission.')
+    alert('Could not access camera. Check permissions.')
     closeCamera()
   }
 }
-
 const capture = () => {
   if (!videoElement.value || !canvasElement.value) return
   
   const video = videoElement.value
   const canvas = canvasElement.value
-  
-  canvas.width = video.videoWidth
-  canvas.height = video.videoHeight
-  
+
+  const MAX_WIDTH = 1280;
+  const scale = Math.min(1, MAX_WIDTH / video.videoWidth);
+
+  canvas.width = video.videoWidth * scale;
+  canvas.height = video.videoHeight * scale;
+ 
   const ctx = canvas.getContext('2d')
   if (!ctx) return
   
@@ -63,26 +71,48 @@ const capture = () => {
       })
       closeCamera()
     }
-  }, 'image/jpeg', 0.8)
+  }, 'image/jpeg', 0.6)
 }
 
 const closeCamera = () => {
   if (stream.value) {
-    stream.value.getTracks().forEach(track => track.stop())
+    // Explicitly stop every track
+    stream.value.getTracks().forEach(track => {
+      track.stop();
+      stream.value?.removeTrack(track); 
+    });
   }
-  stream.value = null
-  showCamera.value = false
-}
 
+  // Clear the video element source
+  if (videoElement.value) {
+    videoElement.value.srcObject = null;
+    videoElement.value.removeAttribute("src");
+    videoElement.value.load(); 
+  }
+
+  stream.value = null;
+  showCamera.value = false;
+};
+const handleVisibilityChange = () => {
+  // If the user minimizes the PWA or switches apps while camera is on
+  if (document.hidden && showCamera.value) {
+    closeCamera()
+  }
+}
+onMounted(() => {
+  document.addEventListener('visibilitychange', handleVisibilityChange)
+})
+
+onUnmounted(() => {
+  document.removeEventListener('visibilitychange', handleVisibilityChange)
+  closeCamera()
+})
 const handleNext = () => {
   if (photoStore.isComplete) {
     flowStore.nextStep()
   }
 }
 
-onUnmounted(() => {
-  closeCamera()
-})
 </script>
 
 <template>
@@ -117,11 +147,13 @@ onUnmounted(() => {
     <!-- Camera Overlay UI -->
     <Teleport to="body">
       <div v-if="showCamera" class="camera-ui">
-        <video 
+       <video 
           ref="videoElement" 
           autoplay 
           playsinline 
-          :class="['camera-preview', { 'is-ios': isIOS }]"
+          muted 
+          class="camera-preview"
+          :class="{ 'is-ios': isIOS }"
         ></video>
         <canvas ref="canvasElement" style="display: none;"></canvas>
 
